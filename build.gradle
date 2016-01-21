@@ -1,0 +1,116 @@
+import groovy.transform.Field
+
+apply plugin: "java"
+apply plugin: "sonar-runner"
+
+@Field systemPropertySet
+
+sourceCompatibility = JavaVersion.VERSION_1_8
+targetCompatibility = JavaVersion.VERSION_1_8
+
+defaultTasks 'clean', 'test'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+configurations {
+    agent
+}
+
+sonarRunner {
+    sonarProperties {
+        property "sonar.host.url", "localhost:9000"
+        property "sonar.jdbc.url", "jdbc:mysql://localhost:3306/sonar51?useUnicode=true&amp;useCompression=true&amp;characterEncoding=utf8"
+        property "sonar.jdbc.driverClassName", "com.mysql.jdbc.Driver"
+        property "sonar.jdbc.username", "sonarUser"
+        property "sonar.jdbc.password", "password"
+        property "sonar.language", "java"
+    }
+}
+
+dependencies {
+
+//    compile 'org.springframework:spring-context:4.1.2.RELEASE'
+    compile 'org.springframework:spring-test:4.1.2.RELEASE'
+//    compile 'org.springframework.data:spring-data-jpa:1.7.1.RELEASE'
+//
+//    compile 'org.postgresql:postgresql:9.3-1102-jdbc41'
+//    compile 'org.hibernate:hibernate-core:4.3.7.Final'
+//    compile 'org.hibernate:hibernate-entitymanager:4.3.7.Final'
+
+//    compile 'com.jayway.restassured:rest-assured:2.7.0'
+//    compile 'com.jayway.restassured:json-schema-validator:2.7.0'
+//    compile 'com.eclipsesource.minimal-json:minimal-json:0.9.1'
+//    compile 'com.sun.mail:javax.mail:1.5.3'
+
+    compile 'org.seleniumhq.selenium:selenium-java:2.48.2'
+    compile 'com.codeborne:phantomjsdriver:1.2.1'
+    compile 'ru.yandex.qatools.htmlelements:htmlelements-java:1.14'
+
+    compile 'org.grails:grails-core:2.4.4'
+
+    compile 'org.testng:testng:6.9.6'
+    compile 'log4j:log4j:1.2.17'
+    compile 'org.json:json:20151123'
+
+    compile 'br.eti.kinoshita:testlink-java-api:1.9.8-1'
+    compile 'ru.yandex.qatools.allure:allure-testng-adaptor:1.4.19'
+    agent 'org.aspectj:aspectjweaver:1.8.7'
+}
+
+loadConfiguration()
+
+sourceSets {
+    main {
+        resources {
+            srcDir 'src/main/resources'
+        }
+    }
+    test {
+        resources {
+            srcDir 'src/test/resources'
+        }
+    }
+}
+
+test.doFirst {
+    //this provides ability to get screen shots by allure
+    jvmArgs "-javaagent:${configurations.agent.singleFile}"
+
+}
+
+test {
+    useTestNG {
+        systemProperties(System.getProperties() + systemPropertySet)
+        println(System.getProperties())
+        options.suites(System.getProperty('suite'))
+    }
+}
+
+def loadConfiguration() {
+
+    //specify common sytem properties
+    System.setProperty('env', hasProperty('env') ? env : 'bvt')
+    System.setProperty('client', hasProperty('client') ? client : 'gc')
+    System.setProperty('i18n', hasProperty('i18n') ? i18n : 'en')
+    System.setProperty('testLinkReport', hasProperty('testLinkReport') ? testLinkReport : 'false')
+    System.setProperty('suite', 'src/test/resources/suite/' + (hasProperty('suite') ? suite : 'testng_bvt.xml').toString())
+
+    //specify env specific properties from config file
+    def configFile = file('config.groovy')
+    def configProperties = new ConfigSlurper(System.getProperty('env')).parse(configFile.toURI().toURL())
+
+    //defines if url specified and override it
+    def envUrl = (hasProperty('url') && getProperty('url') != "" ? url : configProperties.getProperty('url'))
+    configProperties.setProperty('url', envUrl)
+
+    //defines if tenant specified and override it
+    def envTenant = (hasProperty('tenant') && getProperty('tenant') != "" ? tenant : configProperties.getProperty('tenant'))
+    configProperties.setProperty('tenant', envTenant)
+
+    //magic that adds new properties w/o overriding existent ones
+    systemPropertySet = System.getProperties() + configProperties.toProperties()
+    System.setProperties(systemPropertySet)
+}
