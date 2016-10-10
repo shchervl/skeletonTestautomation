@@ -1,7 +1,7 @@
 import groovy.transform.Field
 
 apply plugin: "java"
-apply plugin: "sonar-runner"
+//apply plugin: "sonar-runner"
 
 @Field systemPropertySet
 
@@ -19,6 +19,7 @@ configurations {
     agent
 }
 
+/*
 sonarRunner {
     sonarProperties {
         property "sonar.host.url", "localhost:9000"
@@ -29,6 +30,7 @@ sonarRunner {
         property "sonar.language", "java"
     }
 }
+*/
 
 dependencies {
 
@@ -92,7 +94,7 @@ test {
 def loadConfiguration() {
 
     //specify common sytem properties
-    System.setProperty('env', hasProperty('env') ? env : 'bvt')
+    System.setProperty('env', hasProperty('env') ? env : 'google')
     System.setProperty('client', hasProperty('client') ? client : 'gc')
     System.setProperty('i18n', hasProperty('i18n') ? i18n : 'en')
     System.setProperty('testLinkReport', hasProperty('testLinkReport') ? testLinkReport : 'false')
